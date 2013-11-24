@@ -6,31 +6,91 @@ from student import *
 from course import *
 from error import *
 
-def log_in(students):
-    name = input('Student Name: ')
-    password = getpass.getpass('Password: ')
-    student = get_student(name, students)
-    if student.check_password(password):
-        print('Login Successful!')
+def welcome():
+    WELCOME_MESSAGE = """
+-------------------------------------------------------------------------------
+                              WELCOME TO BELETEARS
+-------------------------------------------------------------------------------"""
+    print(WELCOME_MESSAGE)
+
+def home(students):
+    HELP_MESSAGE = """
+Commands:
+    login                   Login your account.
+    register                Register a new account.
+    help                    Display help message.
+    exit/quit/<Control>-D   Exit this system."""
+
+    def help():
+        print(HELP_MESSAGE)
+
+    def register(students):
+        name = input('Name: ')
+        if name in students:
+            raise BTError('You have already registered.')
+        password = getpass.getpass('Password: ')
+        confirm_password = getpass.getpass('Confirm Password: ')
+        if password != confirm_password:
+            raise BTError('The password does not match the confirm password.')
+        student = Student(name, password)
+        students[name] = student
+        print('Register Successful.')
+        save_students(students)
         return student
 
-def check_args(cmd, args, n):
-    if len(args) < n:
-        raise BTError('illegal argument for {0}'.format(cmd))
+    def login(students):
+        name = input('Name: ')
+        password = getpass.getpass('Password: ')
+        student = get_student(name, students)
+        if student.check_password(password):
+            print('Login Successful.')
+            return student
+
+    help()
+    while True:
+        string = input('\n> ')
+        if string == '':
+            help()
+            continue
+        cmds = string.split()
+        cmd = cmds[0]
+        args = cmds[1:]
+        if cmd == 'help':
+            check_args('help', args, 0, 0)
+            help()
+        elif cmd == 'login':
+            check_args('login', args, 0, 0)
+            return login(students)
+        elif cmd == 'register':
+            check_args('register', args, 0, 0)
+            return register(students)
+        elif cmd == 'exit' or cmd == 'quit':
+            raise EOFError
+        else:
+            raise BTError('illegal command {0}'.format(cmd))
 
 def read_eval_print_loop(student, students, courses):
+    HELP_MESSAGE = """
+Commands:
+    bid [course] [price]    Bid PRICE on course.
+    drop [course]           Drop COURSE, return your bid to your balance.
+    info                    Display your current bids and balance.
+    list                    List all courses.
+    search [keywords...]    List courses that matches the KEYWORDS.
+    help                    Display help message.
+    logout                  Log out the current user account.
+    exit/quit/<Control>-D   Exit this system."""
+
     def help():
-        print(HELP)
+        print(HELP_MESSAGE)
 
     def bid(student, args, courses):
-        check_args('bid', args, 2)
         course_name = ' '.join(args[:-1])
         price = eval(args[-1])
         course = get_course(course_name, courses)
         print(student.bid(course, price))
 
     def drop(student, args, courses):
-        check_args('drop', args, 1)
         course_name = ' '.join(args)
         course = get_course(course_name, courses)
         print(student.drop(course))
@@ -45,7 +105,6 @@ def read_eval_print_loop(student, students, courses):
             print(course.info())
 
     def search(args, courses):
-        check_args('search', args, 1)
         total_result = {}
         for arg in args:
             result = {}
@@ -66,65 +125,81 @@ def read_eval_print_loop(student, students, courses):
         else:
             lst(total_result)
 
-    HELP = """Commands:
-    bid [course] [price]    Bid PRICE on course.
-    drop [course]           Drop COURSE, return your bid to your balance.
-    info                    Display your current bids(including whether
-                            safe to be selected) and balance.
-    list                    List all courses.
-    search [keywords...]    List courses that matches the KEYWORDS.
-    help                    Display help message.
-    logout                  Log out the current user account.
-    exit/quit/<Control>-D   Exit this system."""
-
     help()
     while True:
-        save(students, courses)
-        string = input('> ')
+        save_students(students)
+        save_courses(courses)
+        string = input('\n> ')
         if string == '':
+            help()
             continue
         cmds = string.split()
         cmd = cmds[0]
+        args = cmds[1:]
         if cmd == 'bid':
-            bid(student, cmds[1:], courses)
+            check_args('bid', args, 2)
+            bid(student, args, courses)
         elif cmd == 'drop':
-            drop(student, cmds[1:], courses)
+            check_args('drop', args, 1)
+            drop(student, args, courses)
         elif cmd == 'help':
+            check_args('help', args, 0, 0)
             help()
         elif cmd == 'info':
+            check_args('info', args, 0, 0)
             info(student, courses)
         elif cmd == 'list':
+            check_args('list', args, 0, 0)
             lst(courses)
         elif cmd == 'search':
-            search(cmds[1:], courses)
+            check_args('search', args, 1)
+            search(args, courses)
         elif cmd == 'logout':
             return True
         elif cmd == 'exit' or cmd == 'quit':
-            return False
+            raise EOFError
         else:
             raise BTError('illegal command {0}'.format(cmd))
 
-def save(students, courses):
-    f = open('data.pickle', 'wb')
+def check_args(cmd, args, min, max=None):
+    length = len(args)
+    if len(args) < min:
+        raise BTError('too few arguments for {0}'.format(cmd))
+    elif max is not None and length > max:
+        raise BTError('too many arguments for {0}'.format(cmd))
+
+def save_students(students):
+    f = open('students.pickle', 'wb')
     pickle.dump(students, f)
+    f.close()
+
+def save_courses(courses):
+    f = open('courses.pickle', 'wb')
     pickle.dump(courses, f)
     f.close()
 
-def load():
-    f = open('data.pickle', 'rb')
+def load_students():
+    f = open('students.pickle', 'rb')
     students = pickle.load(f)
+    f.close()
+    return students
+
+def load_courses():
+    f = open('courses.pickle', 'rb')
     courses = pickle.load(f)
     f.close()
-    return students, courses
+    return courses
 
 @main
 def run():
-    students, courses = load()
+    students = load_students()
+    courses = load_courses()
     student = None
+    welcome()
     while True:
         try:
             if student is None:
-                student = log_in(students)
+                student = home(students)
             if read_eval_print_loop(student, students, courses):
                 student = None
             else:
@@ -136,5 +211,6 @@ def run():
         except EOFError:
             print()
             break
-    save(students, courses)
+    save_students(students)
+    save_courses(courses)
     print('Byebye~')

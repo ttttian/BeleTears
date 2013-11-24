@@ -2,8 +2,10 @@ from course import *
 from error import *
 import hashlib
 
+DEFAULT_BALANCE = 1000
+
 class Student:
-    def __init__(self, name, password, balance):
+    def __init__(self, name, password, balance=DEFAULT_BALANCE):
         self.name = name
         self.password = hashlib.sha224(password.encode('utf-8')).hexdigest()
         self.balance = balance

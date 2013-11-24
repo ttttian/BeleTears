@@ -20,9 +20,6 @@ Files:
 
 course.py:  Represents courses  in BeleTears.
 
-data.pickle: The  file to  store current data(to ensure  data  still be  saved
-        after logout or quit).
-
 error.py: Reports  errors  such  as unexisted  username, wrong password
         and illegal  commands such as dropping unselected courses.
 
@@ -39,8 +36,7 @@ ucb.py: Some basic decorators.
 Commands:
         bid [course] [price]    Bid PRICE on course.
         drop [course]           Drop COURSE, return your bid to your balance.
-        info                    Display your current bids(including whether
-                                safe to be selected) and balance.
+        info                    Display your current bids and balance.
         list                    List all courses.
         search [keywords...]    List courses that matches the KEYWORDS.
         help                    Display help message.
