@@ -20,7 +20,7 @@ Files:
 
 course.py:  Represents courses  in BeleTears.
 
-data: The  file to  store current data(to ensure  data  still be  saved
+data.pickle: The  file to  store current data(to ensure  data  still be  saved
         after logout or quit).
 
 error.py: Reports  errors  such  as unexisted  username, wrong password
